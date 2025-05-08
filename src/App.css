@@ -1,0 +1,76 @@
+/* src/App.css */
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f4f6f8;
+}
+
+.App {
+  display: flex;
+  height: 100vh;
+}
+
+.GraphArea {
+  flex: 1;
+  border-right: 1px solid #ddd;
+  background: white;
+}
+
+.Sidebar {
+  width: 300px;
+  padding: 20px;
+  overflow-y: auto;
+  background: #ffffff;
+}
+
+button {
+  display: inline-block;
+  margin: 6px 6px 8px 0;
+  padding: 8px 14px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+button:hover {
+  background: #0056b3;
+}
+
+input, select {
+  width: 100%;
+  padding: 8px;
+  margin: 8px 0;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.panel {
+  border: 1px solid #ccc;
+  padding: 16px;
+  margin-top: 16px;
+  border-radius: 6px;
+  background: #fafafa;
+}
+
+h4 {
+  margin-top: 0;
+}
+
+.resetButton {
+  background: #dc3545;
+}
+
+.confirmButton {
+  background: #28a745;
+}
+
+.confirmButton:hover {
+  background: #1e7e34;
+}
