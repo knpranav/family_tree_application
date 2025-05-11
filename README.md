@@ -1,70 +1,123 @@
-# Getting Started with Create React App
+# 🧬 Family Relationship Inference Tool
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A graph-based web application that determines the exact family relationship between any two individuals in a dynamic, editable family tree. Built with **React**, **Cytoscape.js**, and **graph algorithms**, this tool supports advanced relationship inference—including in-laws, step-relations, and multigenerational trees.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## 🚀 Features
 
-### `npm start`
+### ✅ Interactive Family Tree Editor
+- Add/Edit/Delete individuals
+- Add parents, partners, children, and siblings
+- Smart layout with generation tracking
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### 🧠 Relationship Inference
+- Automatically determine how two people are related (e.g., *“uncle,” “second cousin,” “daughter-in-law”*)
+- Supports complex relationships including in-laws and step-relations
+- Uses BFS and relationship rules to interpret graph paths
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 🧩 Visual Graph Layout
+- Powered by Cytoscape.js and dagre for clean tree rendering
+- Gender-colored nodes and styled relationship edges
 
-### `npm test`
+### 🖱️ User-Friendly Interface
+- Form-based inputs for all node and relationship operations
+- Relationship finder with auto-suggestion and live output
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+---
 
-### `npm run build`
+## 🛠️ Tech Stack
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- **Frontend:** React (Hooks, Functional Components)
+- **Graph Library:** Cytoscape.js + cytoscape-dagre
+- **Algorithms:** Custom BFS, rule-based relationship translator
+- **Language:** JavaScript (ES6+)
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
-### `npm run eject`
+## 📂 Project Structure
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+```
+📁 public/
+├── favicon.ico
+├── index.html
+├── logo192.png
+├── logo512.png
+├── manifest.json
+└── robots.txt
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+📁 src/
+├── App.css
+├── App.js
+├── App.test.js
+├── index.css
+├── index.js
+├── logo.svg
+├── RelationshipUtils.js
+├── reportWebVitals.js
+└── setupTests.js
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+📄 .gitignore
+📄 package.json
+📄 package-lock.json
+📄 README.md
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+---
 
-## Learn More
+## ⚠️ Limitations & Future Work
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Known Limitations
+- Reverse/mirrored relationships (e.g., *"uncle"* shown both ways)
+- Overextended relationship paths (due to missing sibling edges)
+- Limited in-law detection (e.g., *mother-in-law* logic incomplete)
+- No maternal/paternal clarity for aunts/uncles/grandparents
+- No persistence across page reloads (data is cleared)
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Future Enhancements
+- Add invisible sibling connections for more accurate inference
+- Expand and refine kinship rule set
+- Output “maternal” or “paternal” in applicable relationships
+- Add database storage (Firebase or local storage for persistence)
 
-### Code Splitting
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## 🧭 How to Use
 
-### Analyzing the Bundle Size
+### 1. Clone the Repo
+```bash
+git clone https://github.com/your-username/family-relationship-tool.git
+cd family-relationship-tool
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### 2. Install Dependencies
+```bash
+npm install
+```
 
-### Making a Progressive Web App
+### 3. Run the App
+```bash
+npm start
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### 4. Build for Production
+```bash
+npm run build
+```
 
-### Advanced Configuration
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## 👥 Authors
 
-### Deployment
+- **Pranav Srinivasan K N** 
+- **Harshit Singh**  
+- **Rida Javed** 
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## 📄 License
 
-### `npm run build` fails to minify
+This project is licensed under the [MIT License](LICENSE).
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+---
+
