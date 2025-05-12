@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import cytoscape from 'cytoscape';
 import dagre from 'cytoscape-dagre';
+import { getRelationship, getRelationshipChain } from './relationship-utils';
 
 cytoscape.use(dagre);
 
@@ -355,213 +356,46 @@ function App() {
     setMode(null);
   };
 
-  // Improved relationship finder with accurate terminology
-  // const findRelationship = (fromId, toId) => {
-  //   if (fromId === toId) return "Same person";
-  
-  //   // Helper functions
-  //   const getName = id => nodes.find(n => n.id === id)?.name || id;
-  //   const getGender = id => nodes.find(n => n.id === id)?.gender || 'Other';
-  //   const getGeneration = id => nodes.find(n => n.id === id)?.generation || 0;
-  
-  //   // BFS queue tracks complete relationship chain
-  //   const queue = [{
-  //     node: fromId,
-  //     path: [],
-  //     relationships: [] // Stores {type, direction, viaNode} for each step
-  //   }];
+  const buildGraph = () => {
+      const g = {};
+      nodes.forEach(node => {
+        g[node.id] = {
+          id: node.id,
+          gender: node.gender === 'Male' ? 'male'
+                  : node.gender === 'Female' ? 'female' : 'other',
+          parents: edges
+            .filter(e => e.type === 'parent' && e.target === node.id)
+            .map(e => e.source),
+          spouses: edges
+            .filter(e => e.type === 'partner' &&
+                  (e.source === node.id || e.target === node.id))
+            .map(e => e.source === node.id ? e.target : e.source)
+        };
+      });
+      return g;
+    };
     
-  //   const visited = new Set([fromId]);
-  //   const allPaths = [];
-  
-  //   while (queue.length > 0) {
-  //     const {node, path, relationships} = queue.shift();
-      
-  //     // Get all edges connected to current node
-  //     const connectedEdges = edges.filter(e => 
-  //       e.source === node || e.target === node
-  //     );
-  
-  //     for (const edge of connectedEdges) {
-  //       const nextNode = edge.source === node ? edge.target : edge.source;
-  //       const direction = edge.source === node ? 'out' : 'in';
-        
-  //       if (nextNode === toId) {
-  //         // Found a complete path
-  //         const completePath = [...path, node, nextNode];
-  //         const completeRelationships = [...relationships, {
-  //           type: edge.type,
-  //           direction,
-  //           viaNode: node
-  //         }];
-  //         allPaths.push({
-  //           path: completePath,
-  //           relationships: completeRelationships
-  //         });
-  //         continue;
-  //       }
-        
-  //       if (!visited.has(nextNode)) {
-  //         visited.add(nextNode);
-  //         queue.push({
-  //           node: nextNode,
-  //           path: [...path, node],
-  //           relationships: [...relationships, {
-  //             type: edge.type,
-  //             direction,
-  //             viaNode: node
-  //           }]
-  //         });
-  //       }
-  //     }
-  //   }
-  
-  //   if (allPaths.length === 0) return "No relationship found";
-  
-  //   // Select the shortest path for primary relationship
-  //   const primaryPath = allPaths.reduce((shortest, current) => 
-  //     current.path.length < shortest.path.length ? current : shortest
-  //   );
-  
-  //   return analyzeRelationship(fromId, toId, primaryPath, getName, getGender, getGeneration);
-  // };
 
 
-  // const analyzeRelationship = (fromId, toId, pathData, getName, getGender) => {
-  //   const { path, relationships } = pathData;
-  //   const fromGender = getGender(fromId);
+      const findRelationship = (fromId, toId) => {
+        if (!fromId || !toId) return [];
+        const g = buildGraph();
+        const label = getRelationship(fromId, toId, g);
+        const chain = getRelationshipChain(fromId, toId, g)
+                        .map(step => `${step.from} →${step.label}→ ${step.to}`)
+                        .join('  ▸  ');
+        return [label, chain];  // Return as array
+    };
     
-  //   // Convert path to relationship steps
-  //   const steps = [];
-  //   for (let i = 0; i < relationships.length; i++) {
-  //     const rel = relationships[i];
-  //     const nextNode = path[i+1];
-  //     const nextGender = getGender(nextNode);
-      
-  //     steps.push({
-  //       type: rel.type === 'parent' 
-  //         ? (rel.direction === 'out' ? 'to_child' : 'to_parent')
-  //         : 'partner',
-  //       gender: nextGender,
-  //       node: nextNode
-  //     });
-  //   }
+    // OPTIONAL: if you also want the chain for display
+    const findRelationshipChain = (fromId, toId) => {
+      const g = buildGraph();
+      return getRelationshipChain(fromId, toId, g); // returns [{from,to,label},...]
+    };
+
+
   
-  //   // Use the modular relationship checkers
-  //   return describeRelationshipChain(fromId, toId, steps, getName, fromGender);
-  // };
-  // const describeRelationshipChain = (fromId, toId, steps, getName, fromGender) => {
-  //   // First try standard relationships
-  //   const standard = checkStandardRelationships(fromId, toId, steps, getName, fromGender);
-  //   if (standard) return standard;
-  
-  //   // Then try in-law relationships
-  //   const inLaw = checkInLawRelationships(fromId, toId, steps, getName, fromGender);
-  //   if (inLaw) return inLaw;
-  
-  //   // Finally try cousin/uncle/aunt relationships
-  //   const family = checkFamilyRelationships(fromId, toId, steps, getName, fromGender);
-  //   if (family) return family;
-  
-  //   // Fallback to path description
-  //   return buildPathDescription(fromId, toId, steps, getName);
-  // };
-  
-  const findRelationship = (fromId, toId) => {
-    if (fromId === toId) return "Same person";
-  
-    const getName = id => nodes.find(n => n.id === id)?.name || id;
-    const getGender = id => nodes.find(n => n.id === id)?.gender || 'Other';
-  
-    // BFS implementation with invisible sibling connections
-    const queue = [{
-      node: fromId,
-      path: [],
-      relationships: [],
-      viaSibling: false
-    }];
-    
-    const visited = new Set([fromId]);
-    const allPaths = [];
-  
-    while (queue.length > 0) {
-      const { node, path, relationships, viaSibling } = queue.shift();
-      
-      // Get all edges connected to current node
-      const connectedEdges = edges.filter(e => 
-        e.source === node || e.target === node
-      );
-  
-      // Add invisible sibling connections
-      if (!viaSibling) {
-        const parents = edges
-          .filter(e => e.target === node && e.type === 'parent')
-          .map(e => e.source);
-        
-        if (parents.length > 0) {
-          const siblings = edges
-            .filter(e => parents.includes(e.source) && e.type === 'parent' && e.target !== node)
-            .map(e => e.target);
-          
-          for (const sibling of siblings) {
-            if (!visited.has(sibling)) {
-              visited.add(sibling);
-              queue.push({
-                node: sibling,
-                path: [...path, node],
-                relationships: [...relationships, {
-                  type: 'sibling',
-                  direction: 'out',
-                  viaNode: node
-                }],
-                viaSibling: true
-              });
-            }
-          }
-        }
-      }
-  
-      for (const edge of connectedEdges) {
-        const nextNode = edge.source === node ? edge.target : edge.source;
-        const direction = edge.source === node ? 'out' : 'in';
-        
-        if (nextNode === toId) {
-          allPaths.push({
-            path: [...path, node, nextNode],
-            relationships: [...relationships, {
-              type: edge.type,
-              direction,
-              viaNode: node
-            }]
-          });
-          continue;
-        }
-        
-        if (!visited.has(nextNode)) {
-          visited.add(nextNode);
-          queue.push({
-            node: nextNode,
-            path: [...path, node],
-            relationships: [...relationships, {
-              type: edge.type,
-              direction,
-              viaNode: node
-            }],
-            viaSibling: false
-          });
-        }
-      }
-    }
-  
-    if (allPaths.length === 0) return "No relationship found";
-  
-    // Select the shortest valid path
-    const primaryPath = allPaths.reduce((shortest, current) => 
-      current.path.length < shortest.path.length ? current : shortest
-    );
-  
-    return analyzeRelationship(fromId, toId, primaryPath, getName, getGender);
-  };
+
   
   const analyzeRelationship = (fromId, toId, pathData, getName, getGender) => {
     const { path, relationships } = pathData;
@@ -678,107 +512,103 @@ function App() {
     setFindForm(f => ({ ...f, result }));
   };
   
-  // Keep all your existing checker functions exactly as they are:
-  // checkStandardRelationships()
-  // checkInLawRelationships() 
-  // checkFamilyRelationships()
-  // buildPathDescription()
+
 
  
   
-  const checkStandardRelationships = (fromId, toId, steps, getName, fromGender) => {
-    const stepTypes = steps.map(s => s.type).join('-');
-    const stepGenders = steps.map(s => s.gender);
+  // const checkStandardRelationships = (fromId, toId, steps, getName, fromGender) => {
+  //   const stepTypes = steps.map(s => s.type).join('-');
+  //   const stepGenders = steps.map(s => s.gender);
     
-    // Parent
-    if (stepTypes === 'to_parent') {
-      return `${getName(fromId)} is ${getName(toId)}'s ${stepGenders[0] === 'Male' ? 'father' : 'mother'}`;
-    }
+  //   // Parent
+  //   if (stepTypes === 'to_parent') {
+  //     return `${getName(fromId)} is ${getName(toId)}'s ${stepGenders[0] === 'Male' ? 'father' : 'mother'}`;
+  //   }
     
-    // Child
-    if (stepTypes === 'to_child') {
-      return `${getName(fromId)} is ${getName(toId)}'s ${fromGender === 'Male' ? 'son' : 'daughter'}`;
-    }
+  //   // Child
+  //   if (stepTypes === 'to_child') {
+  //     return `${getName(fromId)} is ${getName(toId)}'s ${fromGender === 'Male' ? 'son' : 'daughter'}`;
+  //   }
     
-    // Grandparent
-    if (stepTypes === 'to_parent-to_parent') {
-      return `${getName(fromId)} is ${getName(toId)}'s ${stepGenders[1] === 'Male' ? 'grandfather' : 'grandmother'}`;
-    }
+  //   // Grandparent
+  //   if (stepTypes === 'to_parent-to_parent') {
+  //     return `${getName(fromId)} is ${getName(toId)}'s ${stepGenders[1] === 'Male' ? 'grandfather' : 'grandmother'}`;
+  //   }
     
-    // Grandchild
-    if (stepTypes === 'to_child-to_child') {
-      return `${getName(fromId)} is ${getName(toId)}'s ${fromGender === 'Male' ? 'grandson' : 'granddaughter'}`;
-    }
+  //   // Grandchild
+  //   if (stepTypes === 'to_child-to_child') {
+  //     return `${getName(fromId)} is ${getName(toId)}'s ${fromGender === 'Male' ? 'grandson' : 'granddaughter'}`;
+  //   }
     
-    // Sibling
-    if (stepTypes === 'to_parent-to_child') {
-      return `${getName(fromId)} is ${getName(toId)}'s ${fromGender === 'Male' ? 'brother' : 'sister'}`;
-    }
+  //   // Sibling
+  //   if (stepTypes === 'to_parent-to_child') {
+  //     return `${getName(fromId)} is ${getName(toId)}'s ${fromGender === 'Male' ? 'brother' : 'sister'}`;
+  //   }
     
-    return null;
-  };
+  //   return null;
+  // };
   
-  const checkInLawRelationships = (fromId, toId, steps, getName, fromGender) => {
-    const stepTypes = steps.map(s => s.type).join('-');
-    const stepGenders = steps.map(s => s.gender);
+  // const checkInLawRelationships = (fromId, toId, steps, getName, fromGender) => {
+  //   const stepTypes = steps.map(s => s.type).join('-');
+  //   const stepGenders = steps.map(s => s.gender);
     
-    // Spouse
-    if (stepTypes === 'partner') {
-      return `${getName(fromId)} is ${getName(toId)}'s ${fromGender === 'Male' ? 'husband' : 'wife'}`;
-    }
+  //   // Spouse
+  //   if (stepTypes === 'partner') {
+  //     return `${getName(fromId)} is ${getName(toId)}'s ${fromGender === 'Male' ? 'husband' : 'wife'}`;
+  //   }
     
-    // Parent-in-law
-    if (stepTypes === 'to_parent-partner') {
-      return `${getName(fromId)} is ${getName(toId)}'s ${stepGenders[1] === 'Male' ? 'father-in-law' : 'mother-in-law'}`;
-    }
+  //   // Parent-in-law
+  //   if (stepTypes === 'to_parent-partner') {
+  //     return `${getName(fromId)} is ${getName(toId)}'s ${stepGenders[1] === 'Male' ? 'father-in-law' : 'mother-in-law'}`;
+  //   }
     
-    // Child-in-law
-    if (stepTypes === 'partner-to_parent') {
-      return `${getName(fromId)} is ${getName(toId)}'s ${fromGender === 'Male' ? 'son-in-law' : 'daughter-in-law'}`;
-    }
+  //   // Child-in-law
+  //   if (stepTypes === 'partner-to_parent') {
+  //     return `${getName(fromId)} is ${getName(toId)}'s ${fromGender === 'Male' ? 'son-in-law' : 'daughter-in-law'}`;
+  //   }
     
-    // Sibling-in-law
-    if (stepTypes === 'to_parent-to_child-partner' || 
-        stepTypes === 'to_parent-partner-to_parent') {
-      return `${getName(fromId)} is ${getName(toId)}'s ${fromGender === 'Male' ? 'brother-in-law' : 'sister-in-law'}`;
-    }
+  //   // Sibling-in-law
+  //   if (stepTypes === 'to_parent-to_child-partner' || 
+  //       stepTypes === 'to_parent-partner-to_parent') {
+  //     return `${getName(fromId)} is ${getName(toId)}'s ${fromGender === 'Male' ? 'brother-in-law' : 'sister-in-law'}`;
+  //   }
     
-    return null;
-  };
+  //   return null;
+  // };
   
-  const checkFamilyRelationships = (fromId, toId, steps, getName, fromGender) => {
-    const stepTypes = steps.map(s => s.type).join('-');
-    const stepGenders = steps.map(s => s.gender);
+  // const checkFamilyRelationships = (fromId, toId, steps, getName, fromGender) => {
+  //   const stepTypes = steps.map(s => s.type).join('-');
+  //   const stepGenders = steps.map(s => s.gender);
     
-    // Uncle/Aunt
-    if (stepTypes === 'to_parent-to_child-partner') {
-      const parentGender = stepGenders[0];
-      return `${getName(fromId)} is ${getName(toId)}'s ${parentGender === 'Male' ? 'paternal' : 'maternal'} ${fromGender === 'Male' ? 'uncle' : 'aunt'}`;
-    }
+  //   // Uncle/Aunt
+  //   if (stepTypes === 'to_parent-to_child-partner') {
+  //     const parentGender = stepGenders[0];
+  //     return `${getName(fromId)} is ${getName(toId)}'s ${parentGender === 'Male' ? 'paternal' : 'maternal'} ${fromGender === 'Male' ? 'uncle' : 'aunt'}`;
+  //   }
     
-    // Nephew/Niece
-    if (stepTypes === 'partner-to_child-to_child') {
-      return `${getName(fromId)} is ${getName(toId)}'s ${fromGender === 'Male' ? 'nephew' : 'niece'}`;
-    }
+  //   // Nephew/Niece
+  //   if (stepTypes === 'partner-to_child-to_child') {
+  //     return `${getName(fromId)} is ${getName(toId)}'s ${fromGender === 'Male' ? 'nephew' : 'niece'}`;
+  //   }
     
-    // Cousin
-    if (stepTypes === 'to_parent-to_child-to_child-to_parent') {
-      return `${getName(fromId)} is ${getName(toId)}'s cousin`;
-    }
+  //   // Cousin
+  //   if (stepTypes === 'to_parent-to_child-to_child-to_parent') {
+  //     return `${getName(fromId)} is ${getName(toId)}'s cousin`;
+  //   }
     
-    return null;
-  };
+  //   return null;
+  // };
   
-  const buildPathDescription = (fromId, toId, steps, getName) => {
-    const terms = steps.map(step => {
-      if (step.type === 'to_parent') return step.gender === 'Male' ? 'father' : 'mother';
-      if (step.type === 'to_child') return step.gender === 'Male' ? 'son' : 'daughter';
-      if (step.type === 'partner') return step.gender === 'Male' ? 'husband' : 'wife';
-      return 'relative';
-    });
+  // const buildPathDescription = (fromId, toId, steps, getName) => {
+  //   const terms = steps.map(step => {
+  //     if (step.type === 'to_parent') return step.gender === 'Male' ? 'father' : 'mother';
+  //     if (step.type === 'to_child') return step.gender === 'Male' ? 'son' : 'daughter';
+  //     if (step.type === 'partner') return step.gender === 'Male' ? 'husband' : 'wife';
+  //     return 'relative';
+  //   });
     
-    return `${getName(fromId)} is ${getName(toId)}'s ${terms.join(' of ')}`;
-  };
+  //   return `${getName(fromId)} is ${getName(toId)}'s ${terms.join(' of ')}`;
+  // };
 
  
   
@@ -911,10 +741,19 @@ function App() {
                 {realPeople.map(n => <option key={n.id} value={n.id}>{n.name}</option>)}
               </datalist>
               <button onClick={handleFind} style={confirmStyle}>Find Relationship</button>
+              {/* {findForm.result && (
+                <div style={{ marginTop: 10, padding: 10, background: '#f0f0f0', borderRadius: 4 }}>
+                  <strong>Relationship Path:</strong>
+                  <p>{findForm.result}</p> */}
+
               {findForm.result && (
                 <div style={{ marginTop: 10, padding: 10, background: '#f0f0f0', borderRadius: 4 }}>
                   <strong>Relationship Path:</strong>
-                  <p>{findForm.result}</p>
+                  {findForm.result.map((line, i) => (
+                      <p key={i}>{line}</p>
+              ))}
+
+
                 </div>
               )}
             </div>
